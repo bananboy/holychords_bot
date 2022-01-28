@@ -1,6 +1,6 @@
 import scrapy
 from scrapy.crawler import CrawlerProcess
-from scrapy.utils.response import open_in_browser
+from scrapy.utils.response import open_in_browser as view
 
 
 class GoogleSpider(scrapy.Spider):
@@ -11,9 +11,6 @@ class GoogleSpider(scrapy.Spider):
     }
     start_urls = [
         "https://www.google.com/search?q=ангел у трона твоего+holychords",
-        "https://www.google.com/",
-        "https://github.com/scrapy/scrapy/issues/1612"
-
     ]
 
     def start_requests(self):
@@ -23,9 +20,14 @@ class GoogleSpider(scrapy.Spider):
             )
 
     def parse_page(self, response):
-        print()
-        return
+        href = response.xpath('//*[@id="main"]/div[4]/div/div[1]/a/@href').get()
+        full_url = href.split('=', 1)[1]
+        clear_url = full_url.split('&', 1)[0]
+        yield scrapy.Request(url=clear_url,callback=self.parse_holychords)
 
+    def parse_holychords(self, response):
+        return
 
 process = CrawlerProcess()
 process.crawl(GoogleSpider)
+process.start()
