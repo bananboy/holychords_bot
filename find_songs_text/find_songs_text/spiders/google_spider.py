@@ -1,5 +1,6 @@
 import scrapy
 from scrapy.crawler import CrawlerProcess
+from scrapy.linkextractors import LinkExtractor
 from scrapy.utils.response import open_in_browser as view
 
 
@@ -20,13 +21,20 @@ class GoogleSpider(scrapy.Spider):
             )
 
     def parse_page(self, response):
-        href = response.xpath('//*[@id="main"]/div[4]/div/div[1]/a/@href').get()
-        full_url = href.split('=', 1)[1]
-        clear_url = full_url.split('&', 1)[0]
-        yield scrapy.Request(url=clear_url,callback=self.parse_holychords)
+        extractor = LinkExtractor()
+        links = extractor.extract_links(response)
+        url = self.find_holy_url(links)
+        if url:
+            yield scrapy.Request(url=url,callback=self.parse_holychords)
+
+    def find_holy_url(self, links):
+        for link in links :
+            if 'holychords.com' in link.url:
+                return link.url
+
 
     def parse_holychords(self, response):
-        return
+        print(''.join(response.xpath('//pre[@id="music_text"]').getall()).replace('<br>', '\n'))
 
 process = CrawlerProcess()
 process.crawl(GoogleSpider)
